@@ -700,13 +700,21 @@ function closePost() {
   window.location.hash = 'blog';
 }
 
-function initHashRouting() {
-  window.addEventListener('hashchange', checkHashRoute);
-  checkHashRoute();
+function navigateToRoute(route) {
+  if (window.location.hash === `#${route}`) {
+    checkHashRoute(true);
+  } else {
+    window.location.hash = route;
+  }
 }
 
-function checkHashRoute() {
-  const hash = window.location.hash;
+function initHashRouting() {
+  window.addEventListener('hashchange', () => checkHashRoute(true));
+  checkHashRoute(false);
+}
+
+function checkHashRoute(isUserAction = false) {
+  const rawHash = (window.location.hash || '').toLowerCase();
 
   const postsListSection = document.getElementById('posts-list-section');
   const nowSection = document.getElementById('now-section');
@@ -719,16 +727,18 @@ function checkHashRoute() {
 
   [navBlog, navNow, navMap].forEach(el => el && el.classList.remove('active'));
 
-  if (hash.startsWith('#post=')) {
-    const postId = hash.replace('#post=', '');
+  if (rawHash.startsWith('#post=')) {
+    const postId = rawHash.replace('#post=', '');
     openPost(postId);
-  } else if (hash === '#now') {
+  } else if (rawHash === '#now') {
     if (postsListSection) postsListSection.style.display = 'none';
     if (postExpandedView) postExpandedView.style.display = 'none';
     if (mapSection) mapSection.style.display = 'none';
     if (nowSection) nowSection.style.display = 'block';
     if (navNow) navNow.classList.add('active');
-  } else if (hash === '#map') {
+
+    if (isUserAction || rawHash) scrollToSection('now-target');
+  } else if (rawHash === '#map') {
     if (postsListSection) postsListSection.style.display = 'none';
     if (postExpandedView) postExpandedView.style.display = 'none';
     if (nowSection) nowSection.style.display = 'none';
@@ -737,8 +747,10 @@ function checkHashRoute() {
 
     initExpeditionsMap();
     if (leafletMapInstance) {
-      setTimeout(() => leafletMapInstance.invalidateSize(), 200);
+      setTimeout(() => leafletMapInstance.invalidateSize(), 150);
     }
+
+    if (isUserAction || rawHash) scrollToSection('map-target');
   } else {
     // Default: #blog or empty
     if (nowSection) nowSection.style.display = 'none';
@@ -746,6 +758,17 @@ function checkHashRoute() {
     if (postExpandedView) postExpandedView.style.display = 'none';
     if (postsListSection) postsListSection.style.display = 'block';
     if (navBlog) navBlog.classList.add('active');
+
+    if (rawHash === '#blog' || isUserAction) {
+      scrollToSection('blog-target');
+    }
+  }
+}
+
+function scrollToSection(targetId) {
+  const targetEl = document.getElementById(targetId) || document.getElementById('main-content');
+  if (targetEl) {
+    targetEl.scrollIntoView({ behavior: 'smooth' });
   }
 }
 
