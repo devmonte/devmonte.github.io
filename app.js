@@ -545,12 +545,20 @@ function initExpeditionsMap() {
     return;
   }
 
-  // Center on Tatra / Alps region
-  leafletMapInstance = L.map('expeditions-map').setView([48.8, 17.5], 5);
+  // Center on Europe / Africa overview
+  leafletMapInstance = L.map('expeditions-map').setView([25.0, 30.0], 3);
 
   updateMapTileTheme();
 
   const expeditions = [
+    {
+      name: "Mount Kilimanjaro",
+      elevation: "5,895 m",
+      coords: [-3.0674, 37.3556],
+      type: "Tanzania, Africa",
+      desc: "Highest peak in Africa & world's tallest free-standing mountain.",
+      icon: "🏔️"
+    },
     {
       name: "Rysy Peak",
       elevation: "2,501 m",
@@ -560,43 +568,19 @@ function initExpeditionsMap() {
       icon: "⛰️"
     },
     {
-      name: "Mont Blanc",
-      elevation: "4,807 m",
-      coords: [45.8326, 6.8652],
-      type: "Graian Alps, France / Italy",
-      desc: "Roof of Western Europe. Snow & ice climb via Goûter ridge traverse.",
+      name: "Mount Kazbek",
+      elevation: "5,054 m",
+      coords: [42.6972, 44.5153],
+      type: "Caucasus Mountains, Georgia",
+      desc: "Glaciated 5,000m stratovolcano peak in the Greater Caucasus region.",
       icon: "🏔️"
     },
     {
-      name: "Babia Góra",
-      elevation: "1,725 m",
-      coords: [49.5733, 19.5297],
-      type: "Zywiec Beskids, Poland",
-      desc: "Mother of the Beskids. Famous for sunrise cloud inversions & winter winds.",
-      icon: "⛰️"
-    },
-    {
-      name: "Bieszczady Ridge Trail",
-      elevation: "1,297 m (Połonina)",
-      coords: [49.1233, 22.6133],
-      type: "Bieszczady Mountains",
-      desc: "Wild ridge walks across Połonina Caryńska & starlit wilderness camping.",
-      icon: "🏕️"
-    },
-    {
-      name: "Zugspitze Summit",
-      elevation: "2,962 m",
-      coords: [47.4210, 10.9853],
-      type: "Wetterstein Alps, Germany",
-      desc: "Germany's highest summit via the scenic Höllental gorge & Via Ferrata.",
-      icon: "🏔️"
-    },
-    {
-      name: "Kasprowy Wierch & Swidnica",
-      elevation: "1,987 m",
-      coords: [49.2319, 19.9814],
-      type: "Western Tatras",
-      desc: "Classic winter snowshoeing & alpine trail along the Polish-Slovak border.",
+      name: "Izery Mountains (Góry Izerskie)",
+      elevation: "1,126 m (Wysoka Kopa)",
+      coords: [50.8411, 15.3589],
+      type: "Sudetes, Poland / Czechia",
+      desc: "Scenic mountain range famous for dark sky stargazing, cycling, and wilderness trails.",
       icon: "🥾"
     }
   ];
