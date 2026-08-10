@@ -8,6 +8,76 @@ const FALLBACK_ARTICLES = [
   'scrum-training.md'
 ];
 
+const LOCAL_DEMO_POSTS = [
+  {
+    id: 'git-branching-strategy',
+    title: 'Git Branching Strategy for Small & Fast-Moving Teams',
+    date: '2026-08-01',
+    description: 'A pragmatic approach to Trunk-Based Development and Feature Flags to ship code faster with fewer merge conflicts.',
+    tags: '#git #devops #engineering',
+    published: true,
+    readTime: '4 min read',
+    body: `---
+title: "Git Branching Strategy for Small & Fast-Moving Teams"
+date: "2026-08-01"
+tags: "#git #devops #engineering"
+---
+
+# Git Branching Strategy for Small & Fast-Moving Teams
+
+Shipping code reliably requires a clear, low-friction Git workflow. While **GitFlow** worked well in the era of scheduled release cycles, modern continuous deployment favors **Trunk-Based Development**.
+
+## Why Traditional GitFlow Slows Teams Down
+
+1. **Long-lived feature branches**: Merging after weeks leads to complex merge conflicts.
+2. **Delayed feedback**: Code integration happens late in the release cycle.
+3. **Environment drift**: Staging and production drift apart.
+
+\`\`\`bash
+# Keep feature branches short-lived
+git checkout -b feature/fast-feedback
+git commit -m "Implement feature behind flag"
+git push origin feature/fast-feedback
+\`\`\`
+
+## Recommended Best Practices
+
+- **Short-Lived Branches**: Keep branches alive for no more than 1–2 days.
+- **Feature Flags**: Wrap incomplete features in runtime flags instead of keeping unmerged code.
+- **Automated CI/CD**: Run linting, unit tests, and build checks automatically on every pull request.
+`
+  },
+  {
+    id: 'scrum-training',
+    title: 'Lessons Learned from Agile & Scrum Team Coaching',
+    date: '2026-07-15',
+    description: 'Key takeaways on velocity, team autonomy, and removing sprint blockers without process overhead.',
+    tags: '#agile #scrum #management',
+    published: true,
+    readTime: '3 min read',
+    body: `---
+title: "Lessons Learned from Agile & Scrum Team Coaching"
+date: "2026-07-15"
+tags: "#agile #scrum #management"
+---
+
+# Lessons Learned from Agile & Scrum Team Coaching
+
+Agile methodologies are meant to serve the team, not the other way around. Overly rigid processes create friction and reduce developer autonomy.
+
+## Core Principles That Matter Most
+
+> "Individuals and interactions over processes and tools."
+
+### 1. Daily Standups should be concise
+Keep standups under 15 minutes. Focus strictly on blockers and alignment for the current day.
+
+### 2. Retrospectives must lead to actionable items
+Limit retro outcomes to 1 or 2 concrete improvements per sprint rather than a long list of unresolved complaints.
+`
+  }
+];
+
 let postsData = [];
 let activeTagFilter = 'ALL';
 let searchQuery = '';
@@ -18,9 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
   initTitleRotator();
   initSearchAndFilter();
   initReadingProgress();
-  loadBlogPosts();
   initHashRouting();
+  loadBlogPosts();
 });
+
+function navigateToRoute(route) {
+  window.location.hash = route;
+  checkHashRoute();
+}
 
 /* -------------------------------------------------------------
  * 1. Light / Dark Theme Management
@@ -205,6 +280,11 @@ async function loadBlogPosts() {
 
     postsData = fetchedPosts.filter(p => p && p.published !== false);
 
+    // Fallback to local demo posts if network fetch failed completely
+    if (postsData.length === 0) {
+      postsData = LOCAL_DEMO_POSTS;
+    }
+
     // Sort by date if provided, otherwise preserve original list order
     postsData.sort((a, b) => {
       if (a.date && b.date) return new Date(b.date) - new Date(a.date);
@@ -216,7 +296,10 @@ async function loadBlogPosts() {
     checkHashRoute();
   } catch (err) {
     console.error('Error loading blog posts:', err);
-    postsListContainer.innerHTML = `<p style="color: var(--text-muted);">Unable to load articles at this time.</p>`;
+    postsData = LOCAL_DEMO_POSTS;
+    buildTagCloud();
+    applyFilters();
+    checkHashRoute();
   }
 }
 
@@ -447,10 +530,20 @@ function enhanceCodeBlocks(container) {
  * 8. Interactive Expeditions & Outdoor Map (Leaflet.js)
  * ------------------------------------------------------------- */
 function initExpeditionsMap() {
-  if (leafletMapInstance || !window.L) return;
+  if (leafletMapInstance) return;
 
   const mapContainer = document.getElementById('expeditions-map');
   if (!mapContainer) return;
+
+  if (!window.L) {
+    mapContainer.innerHTML = `
+      <div style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+        <i class="fas fa-map-marked-alt" style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p style="font-size: 1.1rem; font-weight: 500;">Expeditions Map requires an active internet connection to load Leaflet tiles.</p>
+      </div>
+    `;
+    return;
+  }
 
   // Center on Tatra / Alps region
   leafletMapInstance = L.map('expeditions-map').setView([48.8, 17.5], 5);
@@ -609,6 +702,7 @@ function closePost() {
 
 function initHashRouting() {
   window.addEventListener('hashchange', checkHashRoute);
+  checkHashRoute();
 }
 
 function checkHashRoute() {
