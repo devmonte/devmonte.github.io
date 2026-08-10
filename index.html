@@ -23,6 +23,9 @@
   <!-- Prism Syntax Highlighting -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" crossorigin="anonymous" />
 
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" />
+
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css">
 
@@ -39,7 +42,9 @@
     <div class="nav-container">
       <a href="#hero" class="brand-logo">DevMonte</a>
       <div class="nav-actions">
-        <a href="#blog" class="nav-link">Blog</a>
+        <a href="#blog" class="nav-link" id="nav-blog">Blog</a>
+        <a href="#now" class="nav-link" id="nav-now">/now</a>
+        <a href="#map" class="nav-link" id="nav-map">Expeditions</a>
         <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Light/Dark Theme">
           <i class="far fa-moon"></i>
         </button>
@@ -67,9 +72,10 @@
     </a>
   </section>
 
-  <!-- Content & Blog Section -->
-  <main id="blog" class="content-wrapper">
-    <!-- Posts List View -->
+  <!-- Content Section -->
+  <main id="main-content" class="content-wrapper">
+    
+    <!-- 1. Posts List View -->
     <section id="posts-list-section">
       <div class="section-header">
         <h2 class="section-title">Blog</h2>
@@ -97,8 +103,73 @@
       </div>
     </section>
 
-    <!-- Expanded Single Post View -->
-    <article id="post-expanded-view" class="post-expanded-view">
+    <!-- 2. Minimalist /now Dashboard Page -->
+    <section id="now-section" class="now-section" style="display: none;">
+      <div class="section-header">
+        <h2 class="section-title">What I'm Doing Now</h2>
+        <p class="section-subtitle">A public snapshot of current projects, outdoor goals, and focus. <span class="now-badge">Updated Aug 2026</span></p>
+      </div>
+
+      <div class="now-grid">
+        <div class="now-card">
+          <div class="now-card-icon"><i class="fas fa-code"></i></div>
+          <h3 class="now-card-title">Software Engineering</h3>
+          <p class="now-card-desc">Building scalable web systems, exploring agentic workflows, and refining clean code practices.</p>
+          <ul class="now-card-list">
+            <li><i class="fas fa-check-circle"></i> Modern JS / Web Architectures</li>
+            <li><i class="fas fa-check-circle"></i> Git branching strategies & DevOps</li>
+            <li><i class="fas fa-check-circle"></i> AI-assisted development tools</li>
+          </ul>
+        </div>
+
+        <div class="now-card">
+          <div class="now-card-icon"><i class="fas fa-mountain"></i></div>
+          <h3 class="now-card-title">Outdoors & Summits</h3>
+          <p class="now-card-desc">Mountaineering in the Tatras and Alps, alpine scrambling, and minimalist bushcraft outings.</p>
+          <ul class="now-card-list">
+            <li><i class="fas fa-check-circle"></i> Tatra high peak ascents</li>
+            <li><i class="fas fa-check-circle"></i> Shelter & tarp bushcraft setups</li>
+            <li><i class="fas fa-check-circle"></i> Trail endurance & winter hiking</li>
+          </ul>
+        </div>
+
+        <div class="now-card">
+          <div class="now-card-icon"><i class="fas fa-book-open"></i></div>
+          <h3 class="now-card-title">Reading & Focus</h3>
+          <p class="now-card-desc">Current books on engineering leadership, minimalist living, and wilderness survival.</p>
+          <ul class="now-card-list">
+            <li><i class="fas fa-book"></i> <em>Designing Data-Intensive Applications</em></li>
+            <li><i class="fas fa-book"></i> <em>Essentialism: Disciplined Pursuit of Less</em></li>
+            <li><i class="fas fa-book"></i> <em>Bushcraft 101</em> by Dave Canterbury</li>
+          </ul>
+        </div>
+
+        <div class="now-card">
+          <div class="now-card-icon"><i class="fas fa-compass"></i></div>
+          <h3 class="now-card-title">Minimalist Philosophy</h3>
+          <p class="now-card-desc">Streamlining digital tools, clutter-free setups, and focusing on what delivers genuine value.</p>
+          <ul class="now-card-list">
+            <li><i class="fas fa-check-circle"></i> Lightweight gear optimization</li>
+            <li><i class="fas fa-check-circle"></i> Intentional habits & deep work</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Interactive Expeditions & Outdoor Map -->
+    <section id="map-section" class="map-section" style="display: none;">
+      <div class="section-header">
+        <h2 class="section-title">Expeditions & Summits</h2>
+        <p class="section-subtitle">An interactive log of mountain peaks, wilderness hikes, and bushcraft trips.</p>
+      </div>
+
+      <div class="map-container-box">
+        <div id="expeditions-map" class="expeditions-map"></div>
+      </div>
+    </section>
+
+    <!-- 4. Expanded Single Post View -->
+    <article id="post-expanded-view" class="post-expanded-view" style="display: none;">
       <div class="post-nav-bar">
         <button class="back-to-posts-btn" onclick="closePost()">
           <i class="fas fa-arrow-left"></i> Back to Blog
@@ -133,6 +204,9 @@
   <footer class="footer">
     <p>&copy; Grzegorz Jońca (DevMonte). Built with simplicity.</p>
   </footer>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 
   <!-- Prism Syntax Highlighting -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" crossorigin="anonymous"></script>

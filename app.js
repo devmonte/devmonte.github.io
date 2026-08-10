@@ -42,6 +42,9 @@ function initThemeToggle() {
   });
 }
 
+let leafletMapInstance = null;
+let leafletTileLayer = null;
+
 function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('theme', theme);
@@ -49,6 +52,7 @@ function setTheme(theme) {
   if (themeIcon) {
     themeIcon.className = theme === 'dark' ? 'far fa-sun' : 'far fa-moon';
   }
+  updateMapTileTheme();
 }
 
 /* -------------------------------------------------------------
@@ -281,7 +285,6 @@ function selectTagFilter(tag) {
 
 function applyFilters() {
   const filtered = postsData.filter(post => {
-    // 1. Tag filter
     if (activeTagFilter !== 'ALL') {
       const postTags = post.tags ? post.tags.split(/\s+/) : [];
       if (!postTags.includes(activeTagFilter)) {
@@ -289,7 +292,6 @@ function applyFilters() {
       }
     }
 
-    // 2. Search query filter
     if (searchQuery) {
       const inTitle = post.title.toLowerCase().includes(searchQuery);
       const inDesc = post.description.toLowerCase().includes(searchQuery);
@@ -410,7 +412,6 @@ function generateArticleTOC(container) {
 function enhanceCodeBlocks(container) {
   const codeBlocks = container.querySelectorAll('pre');
   codeBlocks.forEach(pre => {
-    // Avoid double wrapping
     if (pre.parentElement.classList.contains('code-block-wrapper')) return;
 
     const wrapper = document.createElement('div');
@@ -443,7 +444,111 @@ function enhanceCodeBlocks(container) {
 }
 
 /* -------------------------------------------------------------
- * 8. Expand Post & Navigation Routing
+ * 8. Interactive Expeditions & Outdoor Map (Leaflet.js)
+ * ------------------------------------------------------------- */
+function initExpeditionsMap() {
+  if (leafletMapInstance || !window.L) return;
+
+  const mapContainer = document.getElementById('expeditions-map');
+  if (!mapContainer) return;
+
+  // Center on Tatra / Alps region
+  leafletMapInstance = L.map('expeditions-map').setView([48.8, 17.5], 5);
+
+  updateMapTileTheme();
+
+  const expeditions = [
+    {
+      name: "Rysy Peak",
+      elevation: "2,501 m",
+      coords: [49.1794, 20.0881],
+      type: "High Tatras, Poland / Slovakia",
+      desc: "Highest peak in Poland. Steep alpine scramble with exposed chain sections.",
+      icon: "⛰️"
+    },
+    {
+      name: "Mont Blanc",
+      elevation: "4,807 m",
+      coords: [45.8326, 6.8652],
+      type: "Graian Alps, France / Italy",
+      desc: "Roof of Western Europe. Snow & ice climb via Goûter ridge traverse.",
+      icon: "🏔️"
+    },
+    {
+      name: "Babia Góra",
+      elevation: "1,725 m",
+      coords: [49.5733, 19.5297],
+      type: "Zywiec Beskids, Poland",
+      desc: "Mother of the Beskids. Famous for sunrise cloud inversions & winter winds.",
+      icon: "⛰️"
+    },
+    {
+      name: "Bieszczady Ridge Trail",
+      elevation: "1,297 m (Połonina)",
+      coords: [49.1233, 22.6133],
+      type: "Bieszczady Mountains",
+      desc: "Wild ridge walks across Połonina Caryńska & starlit wilderness camping.",
+      icon: "🏕️"
+    },
+    {
+      name: "Zugspitze Summit",
+      elevation: "2,962 m",
+      coords: [47.4210, 10.9853],
+      type: "Wetterstein Alps, Germany",
+      desc: "Germany's highest summit via the scenic Höllental gorge & Via Ferrata.",
+      icon: "🏔️"
+    },
+    {
+      name: "Kasprowy Wierch & Swidnica",
+      elevation: "1,987 m",
+      coords: [49.2319, 19.9814],
+      type: "Western Tatras",
+      desc: "Classic winter snowshoeing & alpine trail along the Polish-Slovak border.",
+      icon: "🥾"
+    }
+  ];
+
+  expeditions.forEach(spot => {
+    const popupContent = `
+      <div class="map-popup-card">
+        <div class="map-popup-title">${spot.icon} ${spot.name}</div>
+        <div class="map-popup-meta">${spot.elevation} • ${spot.type}</div>
+        <div class="map-popup-desc">${spot.desc}</div>
+      </div>
+    `;
+
+    L.marker(spot.coords)
+      .addTo(leafletMapInstance)
+      .bindPopup(popupContent);
+  });
+}
+
+function updateMapTileTheme() {
+  if (!leafletMapInstance || !window.L) return;
+
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  
+  if (leafletTileLayer) {
+    leafletMapInstance.removeLayer(leafletTileLayer);
+  }
+
+  if (currentTheme === 'dark') {
+    leafletTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+    });
+  } else {
+    leafletTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    });
+  }
+
+  leafletTileLayer.addTo(leafletMapInstance);
+}
+
+/* -------------------------------------------------------------
+ * 9. Expand Post & Navigation Routing
  * ------------------------------------------------------------- */
 function openPost(postId) {
   const post = postsData.find(p => p.id === postId);
@@ -452,10 +557,12 @@ function openPost(postId) {
   currentOpenedPost = post;
 
   const postsListSection = document.getElementById('posts-list-section');
+  const nowSection = document.getElementById('now-section');
+  const mapSection = document.getElementById('map-section');
   const postExpandedView = document.getElementById('post-expanded-view');
   const postContent = document.getElementById('post-content');
 
-  if (!postsListSection || !postExpandedView || !postContent) return;
+  if (!postExpandedView || !postContent) return;
 
   const htmlContent = window.marked ? marked.parse(post.body) : post.body;
 
@@ -479,15 +586,16 @@ function openPost(postId) {
     </div>
   `;
 
-  // Generate Table of Contents & Code Copy Buttons
   generateArticleTOC(postContent);
   enhanceCodeBlocks(postContent);
 
-  postsListSection.style.display = 'none';
+  if (postsListSection) postsListSection.style.display = 'none';
+  if (nowSection) nowSection.style.display = 'none';
+  if (mapSection) mapSection.style.display = 'none';
   postExpandedView.style.display = 'block';
   
   window.location.hash = `post=${postId}`;
-  document.getElementById('blog').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('main-content').scrollIntoView({ behavior: 'smooth' });
 
   if (window.Prism) {
     Prism.highlightAllUnder(postContent);
@@ -496,14 +604,7 @@ function openPost(postId) {
 
 function closePost() {
   currentOpenedPost = null;
-  const postsListSection = document.getElementById('posts-list-section');
-  const postExpandedView = document.getElementById('post-expanded-view');
-
-  if (postsListSection && postExpandedView) {
-    postExpandedView.style.display = 'none';
-    postsListSection.style.display = 'block';
-    window.location.hash = 'blog';
-  }
+  window.location.hash = 'blog';
 }
 
 function initHashRouting() {
@@ -512,21 +613,50 @@ function initHashRouting() {
 
 function checkHashRoute() {
   const hash = window.location.hash;
+
+  const postsListSection = document.getElementById('posts-list-section');
+  const nowSection = document.getElementById('now-section');
+  const mapSection = document.getElementById('map-section');
+  const postExpandedView = document.getElementById('post-expanded-view');
+
+  const navBlog = document.getElementById('nav-blog');
+  const navNow = document.getElementById('nav-now');
+  const navMap = document.getElementById('nav-map');
+
+  [navBlog, navNow, navMap].forEach(el => el && el.classList.remove('active'));
+
   if (hash.startsWith('#post=')) {
     const postId = hash.replace('#post=', '');
     openPost(postId);
-  } else if (hash === '#blog' || hash === '') {
-    const postsListSection = document.getElementById('posts-list-section');
-    const postExpandedView = document.getElementById('post-expanded-view');
-    if (postsListSection && postExpandedView) {
-      postExpandedView.style.display = 'none';
-      postsListSection.style.display = 'block';
+  } else if (hash === '#now') {
+    if (postsListSection) postsListSection.style.display = 'none';
+    if (postExpandedView) postExpandedView.style.display = 'none';
+    if (mapSection) mapSection.style.display = 'none';
+    if (nowSection) nowSection.style.display = 'block';
+    if (navNow) navNow.classList.add('active');
+  } else if (hash === '#map') {
+    if (postsListSection) postsListSection.style.display = 'none';
+    if (postExpandedView) postExpandedView.style.display = 'none';
+    if (nowSection) nowSection.style.display = 'none';
+    if (mapSection) mapSection.style.display = 'block';
+    if (navMap) navMap.classList.add('active');
+
+    initExpeditionsMap();
+    if (leafletMapInstance) {
+      setTimeout(() => leafletMapInstance.invalidateSize(), 200);
     }
+  } else {
+    // Default: #blog or empty
+    if (nowSection) nowSection.style.display = 'none';
+    if (mapSection) mapSection.style.display = 'none';
+    if (postExpandedView) postExpandedView.style.display = 'none';
+    if (postsListSection) postsListSection.style.display = 'block';
+    if (navBlog) navBlog.classList.add('active');
   }
 }
 
 /* -------------------------------------------------------------
- * 9. Sharing & Toast Notifications
+ * 10. Sharing & Toast Notifications
  * ------------------------------------------------------------- */
 function copyArticleLink() {
   const currentUrl = window.location.href;

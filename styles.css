@@ -716,6 +716,142 @@ body {
   transform: translateY(0);
 }
 
+/* /now Dashboard Styles */
+.now-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  background-color: rgba(37, 99, 235, 0.1);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+[data-theme="dark"] .now-badge {
+  background-color: rgba(88, 166, 255, 0.15);
+}
+
+.now-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.now-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s ease;
+}
+
+.now-card:hover {
+  border-color: var(--card-hover-border);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.now-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--accent-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+[data-theme="dark"] .now-card-icon {
+  background-color: rgba(88, 166, 255, 0.12);
+}
+
+.now-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.now-card-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.now-card-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.now-card-list li {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.now-card-list li i {
+  color: var(--accent-color);
+  font-size: 0.85rem;
+}
+
+/* Map Section Styles */
+.map-container-box {
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.expeditions-map {
+  width: 100%;
+  height: 520px;
+  background-color: var(--card-bg);
+  z-index: 1;
+}
+
+.map-popup-card {
+  padding: 0.25rem 0;
+}
+
+.map-popup-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.map-popup-meta {
+  font-size: 0.8rem;
+  color: #4b5563;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.map-popup-desc {
+  font-size: 0.85rem;
+  color: #374151;
+  line-height: 1.4;
+}
+
+/* Custom Leaflet Dark Mode Popup Styling */
+.leaflet-popup-content-wrapper {
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+}
+
 /* Footer */
 .footer {
   text-align: center;
@@ -746,5 +882,8 @@ body {
     left: 1rem;
     right: 1rem;
     text-align: center;
+  }
+  .expeditions-map {
+    height: 380px;
   }
 }
