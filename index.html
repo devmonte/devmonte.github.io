@@ -20,6 +20,9 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+  <!-- Prism Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" crossorigin="anonymous" />
+
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css">
 
@@ -27,6 +30,9 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
+
+  <!-- Reading Progress Bar -->
+  <div id="reading-progress" class="reading-progress-bar"></div>
 
   <!-- Sticky Navbar -->
   <nav class="navbar">
@@ -70,6 +76,22 @@
         <p class="section-subtitle">Notes on software engineering, outdoors, and minimalism.</p>
       </div>
 
+      <!-- Search & Tag Filter Bar -->
+      <div class="search-filter-wrapper">
+        <div class="search-input-box">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" id="search-input" placeholder="Search posts by keyword, title, or content..." aria-label="Search posts">
+          <button id="clear-search-btn" class="clear-search-btn" title="Clear search">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div id="tag-cloud" class="tag-cloud">
+          <!-- Dynamic tags will be injected here -->
+        </div>
+      </div>
+
+      <!-- Posts Grid -->
       <div id="posts-list" class="posts-list">
         <!-- Dynamically rendered blog posts will appear here -->
       </div>
@@ -77,19 +99,44 @@
 
     <!-- Expanded Single Post View -->
     <article id="post-expanded-view" class="post-expanded-view">
-      <button class="back-to-posts-btn" onclick="closePost()">
-        <i class="fas fa-arrow-left"></i> Back to Blog
-      </button>
+      <div class="post-nav-bar">
+        <button class="back-to-posts-btn" onclick="closePost()">
+          <i class="fas fa-arrow-left"></i> Back to Blog
+        </button>
+
+        <div class="post-share-actions">
+          <button class="action-icon-btn" onclick="copyArticleLink()" title="Copy article link">
+            <i class="fas fa-link"></i>
+          </button>
+          <button class="action-icon-btn" onclick="shareArticleTwitter()" title="Share on X / Twitter">
+            <i class="fab fa-twitter"></i>
+          </button>
+          <button class="action-icon-btn" onclick="shareArticleLinkedIn()" title="Share on LinkedIn">
+            <i class="fab fa-linkedin"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Article Table of Contents Container -->
+      <div id="article-toc" class="article-toc" style="display: none;"></div>
+
       <div id="post-content">
         <!-- Rendered markdown content -->
       </div>
     </article>
   </main>
 
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">Link copied to clipboard!</div>
+
   <!-- Footer -->
   <footer class="footer">
     <p>&copy; Grzegorz Jońca (DevMonte). Built with simplicity.</p>
   </footer>
+
+  <!-- Prism Syntax Highlighting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js" crossorigin="anonymous"></script>
 
   <!-- App Script -->
   <script src="app.js"></script>

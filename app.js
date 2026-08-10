@@ -9,10 +9,15 @@ const FALLBACK_ARTICLES = [
 ];
 
 let postsData = [];
+let activeTagFilter = 'ALL';
+let searchQuery = '';
+let currentOpenedPost = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   initThemeToggle();
   initTitleRotator();
+  initSearchAndFilter();
+  initReadingProgress();
   loadBlogPosts();
   initHashRouting();
 });
@@ -132,7 +137,6 @@ function parseYAMLFrontmatter(text, fileName) {
   metadata.readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
 
   // Fix relative image links in markdown body:
-  // e.g. ![alt](../img/branching.png) -> https://raw.githubusercontent.com/devmonte/blog-articles/master/img/branching.png
   metadata.body = body
     .replace(/!\[(.*?)\]\(\.\.\/(.*?)\)/g, (m, p1, p2) => `![${p1}](${RAW_REPO_BASE}${p2})`)
     .replace(/!\[(.*?)\]\(\/(.*?)\)/g, (m, p1, p2) => `![${p1}](${RAW_REPO_BASE}${p2})`);
@@ -203,7 +207,8 @@ async function loadBlogPosts() {
       return 0;
     });
 
-    renderPostsList(postsData);
+    buildTagCloud();
+    applyFilters();
     checkHashRoute();
   } catch (err) {
     console.error('Error loading blog posts:', err);
@@ -211,12 +216,106 @@ async function loadBlogPosts() {
   }
 }
 
+/* -------------------------------------------------------------
+ * 5. Live Search & Interactive Tag Cloud Filters
+ * ------------------------------------------------------------- */
+function initSearchAndFilter() {
+  const searchInput = document.getElementById('search-input');
+  const clearBtn = document.getElementById('clear-search-btn');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      if (clearBtn) {
+        clearBtn.style.display = searchQuery ? 'block' : 'none';
+      }
+      applyFilters();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchQuery = '';
+        clearBtn.style.display = 'none';
+        applyFilters();
+      }
+    });
+  }
+}
+
+function buildTagCloud() {
+  const tagCloudContainer = document.getElementById('tag-cloud');
+  if (!tagCloudContainer) return;
+
+  const tagMap = new Map();
+  postsData.forEach(post => {
+    if (post.tags) {
+      const tags = post.tags.split(/\s+/).filter(t => t.startsWith('#'));
+      tags.forEach(t => {
+        tagMap.set(t, (tagMap.get(t) || 0) + 1);
+      });
+    }
+  });
+
+  if (tagMap.size === 0) {
+    tagCloudContainer.innerHTML = '';
+    return;
+  }
+
+  const allPill = `<span class="tag-filter-pill ${activeTagFilter === 'ALL' ? 'active' : ''}" onclick="selectTagFilter('ALL')">All (${postsData.length})</span>`;
+  const tagPills = Array.from(tagMap.entries()).map(([tag, count]) => {
+    const isActive = activeTagFilter === tag ? 'active' : '';
+    return `<span class="tag-filter-pill ${isActive}" onclick="selectTagFilter('${tag}')">${tag} (${count})</span>`;
+  }).join('');
+
+  tagCloudContainer.innerHTML = allPill + tagPills;
+}
+
+function selectTagFilter(tag) {
+  activeTagFilter = tag;
+  buildTagCloud();
+  applyFilters();
+}
+
+function applyFilters() {
+  const filtered = postsData.filter(post => {
+    // 1. Tag filter
+    if (activeTagFilter !== 'ALL') {
+      const postTags = post.tags ? post.tags.split(/\s+/) : [];
+      if (!postTags.includes(activeTagFilter)) {
+        return false;
+      }
+    }
+
+    // 2. Search query filter
+    if (searchQuery) {
+      const inTitle = post.title.toLowerCase().includes(searchQuery);
+      const inDesc = post.description.toLowerCase().includes(searchQuery);
+      const inBody = post.body.toLowerCase().includes(searchQuery);
+      const inTags = post.tags.toLowerCase().includes(searchQuery);
+      return inTitle || inDesc || inBody || inTags;
+    }
+
+    return true;
+  });
+
+  renderPostsList(filtered);
+}
+
 function renderPostsList(posts) {
   const postsListContainer = document.getElementById('posts-list');
   if (!postsListContainer) return;
 
   if (posts.length === 0) {
-    postsListContainer.innerHTML = `<p style="color: var(--text-muted);">No articles found.</p>`;
+    postsListContainer.innerHTML = `
+      <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p style="font-size: 1.1rem; font-weight: 500;">No articles match your current search.</p>
+        <button onclick="resetSearchAndFilter()" style="margin-top: 1rem; background: transparent; border: 1px solid var(--accent-color); color: var(--accent-color); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer;">Reset Filters</button>
+      </div>
+    `;
     return;
   }
 
@@ -243,12 +342,114 @@ function renderPostsList(posts) {
   }).join('');
 }
 
+function resetSearchAndFilter() {
+  searchQuery = '';
+  activeTagFilter = 'ALL';
+  const searchInput = document.getElementById('search-input');
+  const clearBtn = document.getElementById('clear-search-btn');
+  if (searchInput) searchInput.value = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  buildTagCloud();
+  applyFilters();
+}
+
 /* -------------------------------------------------------------
- * 5. Expand Post & Navigation Routing
+ * 6. Top Reading Progress Bar
+ * ------------------------------------------------------------- */
+function initReadingProgress() {
+  const progressBar = document.getElementById('reading-progress');
+  if (!progressBar) return;
+
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const progressPercent = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+    progressBar.style.width = `${progressPercent}%`;
+  });
+}
+
+/* -------------------------------------------------------------
+ * 7. Table of Contents & Code Copy Buttons
+ * ------------------------------------------------------------- */
+function generateArticleTOC(container) {
+  const tocContainer = document.getElementById('article-toc');
+  if (!tocContainer) return;
+
+  const headings = container.querySelectorAll('h2, h3');
+  if (headings.length < 2) {
+    tocContainer.style.display = 'none';
+    return;
+  }
+
+  let tocHTML = `
+    <div class="toc-header">
+      <i class="fas fa-list-ul"></i> Table of Contents
+    </div>
+    <ul class="toc-list">
+  `;
+
+  headings.forEach((heading, idx) => {
+    const headingText = heading.textContent.trim();
+    const headingId = heading.id || `heading-${idx + 1}`;
+    heading.id = headingId;
+
+    const level = heading.tagName.toLowerCase() === 'h3' ? 'level-3' : 'level-2';
+
+    tocHTML += `
+      <li class="toc-item ${level}">
+        <a href="#${headingId}" class="toc-link">${headingText}</a>
+      </li>
+    `;
+  });
+
+  tocHTML += `</ul>`;
+  tocContainer.innerHTML = tocHTML;
+  tocContainer.style.display = 'block';
+}
+
+function enhanceCodeBlocks(container) {
+  const codeBlocks = container.querySelectorAll('pre');
+  codeBlocks.forEach(pre => {
+    // Avoid double wrapping
+    if (pre.parentElement.classList.contains('code-block-wrapper')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-block-wrapper';
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-code-btn';
+    copyBtn.innerHTML = `<i class="far fa-copy"></i> Copy`;
+    
+    copyBtn.addEventListener('click', async () => {
+      const codeText = pre.querySelector('code') ? pre.querySelector('code').innerText : pre.innerText;
+      try {
+        await navigator.clipboard.writeText(codeText);
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = `<i class="fas fa-check"></i> Copied!`;
+        showToast('Code snippet copied to clipboard!');
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.innerHTML = `<i class="far fa-copy"></i> Copy`;
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy code snippet:', err);
+      }
+    });
+
+    wrapper.appendChild(copyBtn);
+  });
+}
+
+/* -------------------------------------------------------------
+ * 8. Expand Post & Navigation Routing
  * ------------------------------------------------------------- */
 function openPost(postId) {
   const post = postsData.find(p => p.id === postId);
   if (!post) return;
+
+  currentOpenedPost = post;
 
   const postsListSection = document.getElementById('posts-list-section');
   const postExpandedView = document.getElementById('post-expanded-view');
@@ -278,11 +479,14 @@ function openPost(postId) {
     </div>
   `;
 
+  // Generate Table of Contents & Code Copy Buttons
+  generateArticleTOC(postContent);
+  enhanceCodeBlocks(postContent);
+
   postsListSection.style.display = 'none';
   postExpandedView.style.display = 'block';
   
   window.location.hash = `post=${postId}`;
-
   document.getElementById('blog').scrollIntoView({ behavior: 'smooth' });
 
   if (window.Prism) {
@@ -291,6 +495,7 @@ function openPost(postId) {
 }
 
 function closePost() {
+  currentOpenedPost = null;
   const postsListSection = document.getElementById('posts-list-section');
   const postExpandedView = document.getElementById('post-expanded-view');
 
@@ -318,4 +523,41 @@ function checkHashRoute() {
       postsListSection.style.display = 'block';
     }
   }
+}
+
+/* -------------------------------------------------------------
+ * 9. Sharing & Toast Notifications
+ * ------------------------------------------------------------- */
+function copyArticleLink() {
+  const currentUrl = window.location.href;
+  navigator.clipboard.writeText(currentUrl).then(() => {
+    showToast('Article link copied to clipboard!');
+  }).catch(err => {
+    console.error('Copy link failed:', err);
+  });
+}
+
+function shareArticleTwitter() {
+  if (!currentOpenedPost) return;
+  const url = encodeURIComponent(window.location.href);
+  const text = encodeURIComponent(`Check out "${currentOpenedPost.title}" by @devgrzegorz`);
+  window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+}
+
+function shareArticleLinkedIn() {
+  if (!currentOpenedPost) return;
+  const url = encodeURIComponent(window.location.href);
+  window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.classList.add('show');
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2800);
 }
